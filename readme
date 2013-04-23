@@ -1,4 +1,2 @@
-git commit -a
-
-git push origin master
+This software is written for the Arduino due platform based on the Atmel SAM32 chip generation. Combined with the BLDC power shield it enables the proper contorl of BLDC motors. 
 
