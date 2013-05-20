@@ -99,17 +99,25 @@ else {SET_DEBUG_PIN})
 #define ADC_CH_VOLT_PHB 4 /* AD4 */
 #define ADC_CH_VOLT_PHC 3 /* AD3 */
 
+
+
 #define BIT_ADC_CH_CUR_PHA (0x1U<<ADC_CH_CUR_PHA)
 #define BIT_ADC_CH_CUR_PHB (0x1U<<ADC_CH_CUR_PHB)
 #define BIT_ADC_CH_VOLT_PHA (0x1U<<ADC_CH_VOLT_PHA)
 #define BIT_ADC_CH_VOLT_PHB (0x1U<<ADC_CH_VOLT_PHB)
 #define BIT_ADC_CH_VOLT_PHC (0x1U<<ADC_CH_VOLT_PHC)
 
+
+
 #define ADC_CH_CUR_PHU_RESULT (ADC->ADC_CDR[ADC_CH_CUR_PHA])
 #define ADC_CH_CUR_PHV_RESULT (ADC->ADC_CDR[ADC_CH_CUR_PHB])
-#define ADC_CH_VOLT_PHU_RESULT (ADC->ADC_CDR[BIT_ADC_CH_VOLT_PHA])
-#define ADC_CH_VOLT_PHV_RESULT (ADC->ADC_CDR[BIT_ADC_CH_VOLT_PHB])
-#define ADC_CH_VOLT_PHW_RESULT (ADC->ADC_CDR[BIT_ADC_CH_VOLT_PHC])
+#define ADC_CH_VOLT_PHU_RESULT (ADC->ADC_CDR[ADC_CH_VOLT_PHA])
+#define ADC_CH_VOLT_PHV_RESULT (ADC->ADC_CDR[ADC_CH_VOLT_PHB])
+#define ADC_CH_VOLT_PHW_RESULT (ADC->ADC_CDR[ADC_CH_VOLT_PHC])
+
+#define ADC_CH_DEBUG	1 /* AD1 */
+#define BIT_ADC_DEBUG (0x1U<<ADC_CH_DEBUG)
+#define ADC_CH_DEBUG_RESULT (ADC->ADC_CDR[ADC_CH_DEBUG])
 
 #define PORT_ADC PIOA
 #define PIN_ADC_CH0 16 /* AD7 -> ch0 on arduino due */
@@ -298,7 +306,7 @@ void BldcControl::configureADC(void)
     /* enable channels */
     ADC->ADC_CHER |= BIT_ADC_CH_CUR_PHA | BIT_ADC_CH_CUR_PHB |
                      BIT_ADC_CH_VOLT_PHA | BIT_ADC_CH_VOLT_PHB |
-                     BIT_ADC_CH_VOLT_PHC;
+                     BIT_ADC_CH_VOLT_PHC | BIT_ADC_DEBUG;
 
     /* set ADC trigger */
     ADC->ADC_MR |= ADC_MR_TRGEN_EN | /* enable trigger */
@@ -644,7 +652,9 @@ SET_DEBUG_PIN;
         rotorPosition = rotorPosition%360;
         
         /* calculate speed */
+		this->intCountPrev = this->interruptCounter;
         this->interruptCounter = 0;
+		
     }
     else
     {
@@ -667,7 +677,7 @@ SET_DEBUG_PIN;
 
     /* debug output */
     analogWriteResolution(12);
-    analogWrite(66,tmp_dc); /* DAC0 */
+    analogWrite(66,ADC_CH_VOLT_PHU_RESULT); /* DAC0 */
     analogWrite(67,Ifilt); /* DAC1 */
 CLR_DEBUG_PIN;
 }
@@ -700,13 +710,13 @@ int16_t BldcControl::CurrentControl(int16_t iFbk, int16_t iRef)
 		iInt = iInt - Kint;
 	}
 	/* integral value limiter - anti wind up */
-	if (iInt > (this->pwmPeriod/8))
+	if (iInt > (this->pwmPeriod/4))
     {
-        iInt = (this->pwmPeriod/8);
+        iInt = (this->pwmPeriod/4);
     }
-    else if (iInt < -((int16_t)(this->pwmPeriod/8)))
+    else if (iInt < -((int16_t)(this->pwmPeriod/4)))
     {
-        iInt = -((int16_t)(this->pwmPeriod/8));
+        iInt = -((int16_t)(this->pwmPeriod/4));
     }
 	
 	
@@ -757,12 +767,15 @@ descritpion: returns the actual speed of the machine in rpm
 float BldcControl::getActualSpeed(void)
 {
     float actualSpeed;
+	uint32_t intCount;
+	
+	intCount = this->intCountPrev;
 
-    actualSpeed = (float)(CTRL_FRQ / this->interruptCounter) *
-                ((((float)(deltaPhi) / this->motorProperties.polePairs ))/360) *
+    actualSpeed = (float)(CTRL_FRQ / intCount) *
+                ((((float)(60) / this->motorProperties.polePairs ))/360) *
                 (float)SEC_PER_MIN;
 
-    return actualSpeed;
+    return ADC_CH_VOLT_PHU_RESULT ;
 }
 
 
