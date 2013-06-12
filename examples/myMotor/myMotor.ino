@@ -13,7 +13,7 @@ void setup() {
 }
 
 void loop() {
-    /* print duty cycle speed */
+    /* print duty cycle & speed */
     Serial.print("\nRequested Current in Duty Cycle ticks:");
     Serial.println(myMotor.currentRef,4);  
     Serial.print("Actual Speed:");
