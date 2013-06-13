@@ -18,6 +18,8 @@ void loop() {
     Serial.println(myMotor.currentRef,4);  
     Serial.print("Actual Speed:");
     Serial.println(myMotor.debug);//myMotor.getActualSpeed(),4);
+    Serial.print("DC Link voltage:");
+    Serial.println(myMotor.getDcLinkVoltage(),4);
   
     /* read commands from serial port */
     while (Serial.available()) {
@@ -40,6 +42,18 @@ void loop() {
             }
             if (inputString.startsWith(String("stop"))){
                 myMotor.stop();             
+            }
+            if (inputString.startsWith(String("Ki="))){
+                inputString = inputString.substring(3);
+                char floatVar[5];
+                inputString.toCharArray(floatVar,5);
+                myMotor.Kint = atoi(floatVar);             
+            }
+            if (inputString.startsWith(String("Kp="))){
+                inputString = inputString.substring(3);
+                char floatVar[5];
+                inputString.toCharArray(floatVar,5);
+                myMotor.Kprp = atoi(floatVar);               
             }
             inputString = ""; 
         }
